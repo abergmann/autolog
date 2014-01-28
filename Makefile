@@ -3,7 +3,7 @@
 # The -g flag is to include debugging information.  It gets
 # stripped back out in the install command anyway.
 CC	= gcc
-CFLAGS	= -g
+CFLAGS	= -g -Wall -D_GNU_SOURCE
 MANDIR  = /opt/autolog/man
 BINDIR  = /opt/autolog/sbin
 ETCDIR  = /opt/autolog/etc
