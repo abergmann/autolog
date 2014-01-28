@@ -212,133 +212,6 @@ int bailout(char *message, int status)  /* display error message and exit */
     exit(status);
     }
 
-int check_idle()            /* select utmp entries needing killing */
-    {
-    char dev[STRLEN], name[STRLEN], prname[STRLEN], *gn = "";
-    struct stat status;
-    time_t idle, pres_time, start, time(), stime, atime;
-    struct passwd *passwd_entry;
-    struct group *group_entry;
-    conf_el *ce;
-    int i;
-
-#ifdef __hpux
-#	define UT_NAMESIZE 8  /* utmp.h: char ut_user[8] ; */
-#endif
-
-
-    if (utmpp->ut_type != USER_PROCESS)     /* if not a user process */
-        {
-        if (listall)
-            printf("Non-user process: N:%-8s P:%5d Login:%s",utmpp->ut_user,utmpp->ut_pid,ctime((const time_t *)&utmpp->ut_time));
-        return(0);                          /* skip the utmp entry */
-        }
-    sprintf(prname,"/proc/%d",utmpp->ut_pid);   /* make filename to check in /proc */
-    if (stat(prname, &status))                  /* is this a current process */
-        {
-        if (listall)
-            printf("Dead process: N:%-8s P:%5d Login:%s",utmpp->ut_user,utmpp->ut_pid,ctime((const time_t *)&utmpp->ut_time));
-        return(0);
-        }
-        
-    sprintf(dev,"/dev/%s",utmpp->ut_line);  /* append /dev/ to base name */
-    if (stat(dev, &status))                 /* if can't get status for port */
-        bailout("Can't get status of user's terminal", 1);
-
-    /* idle time = current time less last access time: */
-    time(&pres_time);                           /* get current time */
-    atime = (status.st_atime > utmpp->ut_time) ? status.st_atime : utmpp->ut_time; /* get last access time */
-    idle = (pres_time - atime) / 60;			/* total idle minutes */
-    stime = (pres_time - utmpp->ut_time) / 60;  /* total session minutes */
-    strncpy(name, utmpp->ut_user, UT_NAMESIZE); /* get user name */
-    name[UT_NAMESIZE] = '\0';           /* null terminate user name string */
-
-    if (debug)
-        printf("\nChecking: %-11s on %-12s I:%-4d T:%d Login: %s",name,dev,idle,utmpp->ut_type,ctime((const time_t *)&utmpp->ut_time));
-
-    /* now try to find the group of this person */
-    /* if usernames in utmp are limited to 8 chars, we will may fail on */
-    /* names that are longer than this, so we'll try to find it by uid */
-    if (!(passwd_entry = getpwnam(name)))       /* If can't find by name */
-        passwd_entry = getpwuid(status.st_uid); /* try by uid */
-    if (passwd_entry)
-        {
-        strcpy(name,passwd_entry->pw_name);
-        if(group_entry = getgrgid( passwd_entry->pw_gid ))
-            gn = group_entry->gr_name;
-        else if (debug)
-            printf("Can't find group entry for user: %s\n",name);
-        }
-    else if (debug)
-        printf("Can't find password entry for user: %s\n",name);
-    
-    for(i = 0; i < c_idx; i++)
-        if (pat_match(c_arr[i].name,name) && 
-            pat_match(c_arr[i].group,gn) &&
-            pat_match(c_arr[i].line,utmpp->ut_line))
-            {
-            if (debug)
-                printf("Match #%2d: U:%-12s Grp:%-8s Line:%-9s Pid:%-6d Sess:%3d:%02d\n",
-                    i+1,name,gn,utmpp->ut_line,utmpp->ut_pid,stime/60,stime%60);
-            if (!c_arr[i].idle)     /* if user exempt (idle=0) */
-                {
-                if (debug)
-                    printf("User exempt\n");
-                return(0);          /* then don't kill him */
-                }
-            ce = &c_arr[i];         /* get address of matched record */
-            break;
-            }
-    if (i >= c_idx)
-        {
-        if (debug)
-            printf("No match for process\n");
-        return(0);
-        }
-        
-    if (!c_arr[i].hard)                 /* if considering idle time */
-        {
-        if (debug)
-            printf("Subject to logout   Idle time: %4d (%2d allowed)\n",idle,ce->idle);
-        if (idle < ce->idle)    /* if user was recently active */
-            return(0);                  /* let it live */
-        }
-    else
-        {
-        if (debug)
-            printf("Subject to logout   Total time: %4d (%2d allowed)\n",stime,ce->idle);
-        if (stime < ce->idle)   /* if user still under limit */
-            return(0);                  /* let it live */
-        }
-    if (nokill)
-        {
-        if (debug)
-            printf("Would kill this process\n");
-        return(1);
-        }
-    if (debug)
-        printf("Warning user:%s Line:%s  Sleep %d sec\n",name,utmpp->ut_line,ce->grace);
-    mesg(WARNING, name, dev, stime, idle, ce); /* send warning to user */
-    if (stat(dev, &status))
-        bailout("Can't get status of user's terminal", 2);
-    start = status.st_atime;                /* start time for countdown */
-    sleep(ce->grace);
-    if (stat(dev, &status))
-        bailout("Can't get status of user's terminal", 3);
-    if (ce->hard || start >= status.st_atime)   /* user still idle */
-        {
-        if (debug)
-            printf("Killing user:%s Line:%s  Sleep %d sec\n",name,utmpp->ut_line,KWAIT);
-        if (killit(utmpp->ut_pid))
-            {
-            mesg(LOGOFF, name, dev, stime, idle, ce); /* send warning to user */
-            return(1);
-            }
-        mesg(NOLOGOFF, name, dev, stime, idle, ce); /* couldn't kill */
-        }
-    return(0);
-    }
-
 int mesg(int flag, char *name, char *dev, int stime, int idle, conf_el *ce)
     {
     char    mbuf[LINELEN];          /* message buffer */
@@ -419,6 +292,133 @@ int killit(int pid)     /* terminate process using SIGHUP, then SIGKILL */
         }
     else
         return(1);              /* successful kill with SIGHUP */
+    }
+
+int check_idle()            /* select utmp entries needing killing */
+    {
+    char dev[STRLEN], name[STRLEN], prname[STRLEN], *gn = "";
+    struct stat status;
+    time_t idle, pres_time, start, time(), stime, atime;
+    struct passwd *passwd_entry;
+    struct group *group_entry;
+    conf_el *ce;
+    int i;
+
+#ifdef __hpux
+#	define UT_NAMESIZE 8  /* utmp.h: char ut_user[8] ; */
+#endif
+
+
+    if (utmpp->ut_type != USER_PROCESS)     /* if not a user process */
+        {
+        if (listall)
+            printf("Non-user process: N:%-8s P:%5d Login:%s",utmpp->ut_user,utmpp->ut_pid,ctime((const time_t *)&utmpp->ut_time));
+        return(0);                          /* skip the utmp entry */
+        }
+    sprintf(prname,"/proc/%d",utmpp->ut_pid);   /* make filename to check in /proc */
+    if (stat(prname, &status))                  /* is this a current process */
+        {
+        if (listall)
+            printf("Dead process: N:%-8s P:%5d Login:%s",utmpp->ut_user,utmpp->ut_pid,ctime((const time_t *)&utmpp->ut_time));
+        return(0);
+        }
+        
+    sprintf(dev,"/dev/%s",utmpp->ut_line);  /* append /dev/ to base name */
+    if (stat(dev, &status))                 /* if can't get status for port */
+        bailout("Can't get status of user's terminal", 1);
+
+    /* idle time = current time less last access time: */
+    time(&pres_time);                           /* get current time */
+    atime = (status.st_atime > utmpp->ut_time) ? status.st_atime : utmpp->ut_time; /* get last access time */
+    idle = (pres_time - atime) / 60;			/* total idle minutes */
+    stime = (pres_time - utmpp->ut_time) / 60;  /* total session minutes */
+    strncpy(name, utmpp->ut_user, UT_NAMESIZE); /* get user name */
+    name[UT_NAMESIZE] = '\0';           /* null terminate user name string */
+
+    if (debug)
+        printf("\nChecking: %-11s on %-12s I:%-4zu T:%d Login: %s",name,dev,idle,utmpp->ut_type,ctime((const time_t *)&utmpp->ut_time));
+
+    /* now try to find the group of this person */
+    /* if usernames in utmp are limited to 8 chars, we will may fail on */
+    /* names that are longer than this, so we'll try to find it by uid */
+    if (!(passwd_entry = getpwnam(name)))       /* If can't find by name */
+        passwd_entry = getpwuid(status.st_uid); /* try by uid */
+    if (passwd_entry)
+        {
+        strcpy(name,passwd_entry->pw_name);
+        if(group_entry = getgrgid( passwd_entry->pw_gid ))
+            gn = group_entry->gr_name;
+        else if (debug)
+            printf("Can't find group entry for user: %s\n",name);
+        }
+    else if (debug)
+        printf("Can't find password entry for user: %s\n",name);
+    
+    for(i = 0; i < c_idx; i++)
+        if (pat_match(c_arr[i].name,name) && 
+            pat_match(c_arr[i].group,gn) &&
+            pat_match(c_arr[i].line,utmpp->ut_line))
+            {
+            if (debug)
+                printf("Match #%2d: U:%-12s Grp:%-8s Line:%-9s Pid:%-6d Sess:%3zu:%02zu\n",
+                    i+1,name,gn,utmpp->ut_line,utmpp->ut_pid,stime/60,stime%60);
+            if (!c_arr[i].idle)     /* if user exempt (idle=0) */
+                {
+                if (debug)
+                    printf("User exempt\n");
+                return(0);          /* then don't kill him */
+                }
+            ce = &c_arr[i];         /* get address of matched record */
+            break;
+            }
+    if (i >= c_idx)
+        {
+        if (debug)
+            printf("No match for process\n");
+        return(0);
+        }
+        
+    if (!c_arr[i].hard)                 /* if considering idle time */
+        {
+        if (debug)
+            printf("Subject to logout   Idle time: %4zu (%2d allowed)\n",idle,ce->idle);
+        if (idle < ce->idle)    /* if user was recently active */
+            return(0);                  /* let it live */
+        }
+    else
+        {
+        if (debug)
+            printf("Subject to logout   Total time: %4zu (%2d allowed)\n",stime,ce->idle);
+        if (stime < ce->idle)   /* if user still under limit */
+            return(0);                  /* let it live */
+        }
+    if (nokill)
+        {
+        if (debug)
+            printf("Would kill this process\n");
+        return(1);
+        }
+    if (debug)
+        printf("Warning user:%s Line:%s  Sleep %d sec\n",name,utmpp->ut_line,ce->grace);
+    mesg(WARNING, name, dev, stime, idle, ce); /* send warning to user */
+    if (stat(dev, &status))
+        bailout("Can't get status of user's terminal", 2);
+    start = status.st_atime;                /* start time for countdown */
+    sleep(ce->grace);
+    if (stat(dev, &status))
+        bailout("Can't get status of user's terminal", 3);
+    if (ce->hard || start >= status.st_atime)   /* user still idle */
+        {
+        if (debug)
+            printf("Killing user:%s Line:%s  Sleep %d sec\n",name,utmpp->ut_line,KWAIT);
+        if (killit(utmpp->ut_pid))
+            {
+            mesg(LOGOFF, name, dev, stime, idle, ce); /* send warning to user */
+            return(1);
+            }
+        mesg(NOLOGOFF, name, dev, stime, idle, ce); /* couldn't kill */
+        }
+    return(0);
     }
 
 int main(int argc, char *argv[])
