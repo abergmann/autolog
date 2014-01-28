@@ -254,7 +254,7 @@ int check_idle()            /* select utmp entries needing killing */
     name[UT_NAMESIZE] = '\0';           /* null terminate user name string */
 
     if (debug)
-        printf("\nChecking: %-11s on %-12s I:%-4d T:%d Login: %s",name,dev,idle,utmpp->ut_type,ctime(&utmpp->ut_time));
+        printf("\nChecking: %-11s on %-12s I:%-4d T:%d Login: %s",name,dev,idle,utmpp->ut_type,ctime((const time_t *)&utmpp->ut_time));
 
     /* now try to find the group of this person */
     /* if usernames in utmp are limited to 8 chars, we will may fail on */
