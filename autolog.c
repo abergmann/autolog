@@ -206,6 +206,12 @@ int pat_match(char *pattern,char *strg)
     }
 #endif
 
+int bailout(char *message, int status)  /* display error message and exit */
+    {
+    fprintf(stderr,"autologout: %s\n", message);
+    exit(status);
+    }
+
 int check_idle()            /* select utmp entries needing killing */
     {
     char dev[STRLEN], name[STRLEN], prname[STRLEN], *gn = "";
@@ -413,12 +419,6 @@ int killit(int pid)     /* terminate process using SIGHUP, then SIGKILL */
         }
     else
         return(1);              /* successful kill with SIGHUP */
-    }
-
-int bailout(char *message, int status)  /* display error message and exit */
-    {
-    fprintf(stderr,"autologout: %s\n", message);
-    exit(status);
     }
 
 int main(int argc, char *argv[])
