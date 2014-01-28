@@ -155,7 +155,7 @@ void eat_confile()
                         printf("Unknown token in file: %s: %s\n",confname,s);
                     }
                 }
-            while(s=strtok(0,delims));
+            while( (s=strtok(0,delims)) );
             c_idx++;
             }
         fclose(f);
@@ -224,14 +224,14 @@ int check_idle()            /* select utmp entries needing killing */
     if (utmpp->ut_type != USER_PROCESS)     /* if not a user process */
         {
         if (listall)
-            printf("Non-user process: N:%-8s P:%5d Login:%s",utmpp->ut_user,utmpp->ut_pid,ctime(&utmpp->ut_time));
+            printf("Non-user process: N:%-8s P:%5d Login:%s",utmpp->ut_user,utmpp->ut_pid,ctime((const time_t *)&utmpp->ut_time));
         return(0);                          /* skip the utmp entry */
         }
     sprintf(prname,"/proc/%d",utmpp->ut_pid);   /* make filename to check in /proc */
     if (stat(prname, &status))                  /* is this a current process */
         {
         if (listall)
-            printf("Dead process: N:%-8s P:%5d Login:%s",utmpp->ut_user,utmpp->ut_pid,ctime(&utmpp->ut_time));
+            printf("Dead process: N:%-8s P:%5d Login:%s",utmpp->ut_user,utmpp->ut_pid,ctime((const time_t *)&utmpp->ut_time));
         return(0);
         }
         
