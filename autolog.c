@@ -18,6 +18,7 @@
     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 */
 
+#include    <stdlib.h>
 #include    <stdio.h>
 #include    <signal.h>
 #include    <string.h>
@@ -27,8 +28,8 @@
 #include    <time.h>
 #include    <pwd.h>
 #include    <grp.h>
-#include	<regex.h>
-#include	<malloc.h>
+#include    <regex.h>
+#include    <malloc.h>
 
 #define     D_IDLE      30  /* maximum idle time (minutes) */
 #define     D_GRACE     30  /* grace time (sec) for user reply */
