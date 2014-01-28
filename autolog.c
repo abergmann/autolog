@@ -88,7 +88,7 @@ typedef struct conf
 conf_el c_arr[MAXCONF];
 int c_idx = 0;
 
-set_defs(int i)
+void set_defs(int i)
     {
     c_arr[i].name = anystrg;
     c_arr[i].group = anystrg;
@@ -102,7 +102,7 @@ set_defs(int i)
     c_arr[i].log = g_log;
     }
 
-eat_confile()
+void eat_confile()
     {
     FILE *f;
     char *s, iline[LINELEN];
@@ -176,7 +176,7 @@ eat_confile()
 #define AVOID_REGEX_BUG
 #endif
 #ifdef AVOID_REGEX_BUG				/* some strange bug in re_exec */
-pat_match(char *patt, char *strg)
+int pat_match(char *patt, char *strg)
     {
     struct re_pattern_buffer rpb;
     int len, retval = 0;
@@ -199,14 +199,14 @@ pat_match(char *patt, char *strg)
 
 #else
 /* return true if strg matches the regex in pattern */
-pat_match(char *pattern,char *strg)
+int pat_match(char *pattern,char *strg)
     {
     re_comp(pattern);
     return(re_exec(strg));
     }
 #endif
 
-check_idle()            /* select utmp entries needing killing */
+int check_idle()            /* select utmp entries needing killing */
     {
     char dev[STRLEN], name[STRLEN], prname[STRLEN], *gn = "";
     struct stat status;
@@ -333,7 +333,7 @@ check_idle()            /* select utmp entries needing killing */
     return(0);
     }
 
-mesg(int flag, char *name, char *dev, int stime, int idle, conf_el *ce)
+int mesg(int flag, char *name, char *dev, int stime, int idle, conf_el *ce)
     {
     char    mbuf[LINELEN];          /* message buffer */
     time_t  tvec;
@@ -398,7 +398,7 @@ mesg(int flag, char *name, char *dev, int stime, int idle, conf_el *ce)
     return(0);
     }
 
-killit(int pid)     /* terminate process using SIGHUP, then SIGKILL */
+int killit(int pid)     /* terminate process using SIGHUP, then SIGKILL */
     {
     kill(pid, SIGHUP);          /* first send "hangup" signal */
     sleep(KWAIT);
@@ -415,13 +415,13 @@ killit(int pid)     /* terminate process using SIGHUP, then SIGKILL */
         return(1);              /* successful kill with SIGHUP */
     }
 
-bailout(char *message, int status)  /* display error message and exit */
+int bailout(char *message, int status)  /* display error message and exit */
     {
     fprintf(stderr,"autologout: %s\n", message);
     exit(status);
     }
 
-main(int argc, char *argv[])
+int main(int argc, char *argv[])
     {
     int i;
     for (i = 1; i < argc; i++)
