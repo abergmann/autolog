@@ -88,66 +88,6 @@ typedef struct conf
 conf_el c_arr[MAXCONF];
 int c_idx = 0;
 
-main(int argc, char *argv[])
-    {
-    int i;
-    for (i = 1; i < argc; i++)
-        if (argv[i][0] == '-')
-            switch(argv[i][1])
-                {
-                case 'a':
-
-                    listall = 1;
-                    break;
-                case 'd':
-                    debug = 1;
-                    break;
-                case 'n':
-                    nokill = 1;
-                    break;
-                case 'h':
-                    g_hard = 1;
-                    break;
-                case 'l':
-                    logfname = argv[++i];
-                    break;
-                case 'f':
-                    confname = argv[++i];
-                    break;
-                case 't':
-                    g_idle = atoi(argv[++i]);
-                    break;
-                case 'g':
-                    g_grace = atoi(argv[++i]);
-                    break;
-                case 'm':
-                    g_mail = (argv[++i][0] == 'y');
-                    break;
-                case 'c':
-                    g_clear = (argv[++i][0] == 'y');
-                    break;
-                case 'w':
-                    g_warn = (argv[++i][0] == 'y');
-                    break;
-                case 'L':
-                    g_log = (argv[++i][0] == 'y');
-                    break;
-                default:
-                    fprintf(stderr,"autologout: illegal switch: %s\n", argv[i]);
-                }
-        else
-            fprintf(stderr,"autologout: illegal parameter: %s\n", argv[i]);
-    eat_confile();              /* read config file */
-    if (!debug)                 /* if not in debug mode, */
-        if (fork())             /* the parent process */
-            exit(0);            /* exits */
-
-    /* the child processes all utmp file entries: */
-    while ((utmpp = getutent()) != (struct utmp *) NULL)
-        check_idle();
-    exit(0);                    /* done, so bye */
-    }
-
 set_defs(int i)
     {
     c_arr[i].name = anystrg;
@@ -480,3 +420,64 @@ bailout(char *message, int status)  /* display error message and exit */
     fprintf(stderr,"autologout: %s\n", message);
     exit(status);
     }
+
+main(int argc, char *argv[])
+    {
+    int i;
+    for (i = 1; i < argc; i++)
+        if (argv[i][0] == '-')
+            switch(argv[i][1])
+                {
+                case 'a':
+
+                    listall = 1;
+                    break;
+                case 'd':
+                    debug = 1;
+                    break;
+                case 'n':
+                    nokill = 1;
+                    break;
+                case 'h':
+                    g_hard = 1;
+                    break;
+                case 'l':
+                    logfname = argv[++i];
+                    break;
+                case 'f':
+                    confname = argv[++i];
+                    break;
+                case 't':
+                    g_idle = atoi(argv[++i]);
+                    break;
+                case 'g':
+                    g_grace = atoi(argv[++i]);
+                    break;
+                case 'm':
+                    g_mail = (argv[++i][0] == 'y');
+                    break;
+                case 'c':
+                    g_clear = (argv[++i][0] == 'y');
+                    break;
+                case 'w':
+                    g_warn = (argv[++i][0] == 'y');
+                    break;
+                case 'L':
+                    g_log = (argv[++i][0] == 'y');
+                    break;
+                default:
+                    fprintf(stderr,"autologout: illegal switch: %s\n", argv[i]);
+                }
+        else
+            fprintf(stderr,"autologout: illegal parameter: %s\n", argv[i]);
+    eat_confile();              /* read config file */
+    if (!debug)                 /* if not in debug mode, */
+        if (fork())             /* the parent process */
+            exit(0);            /* exits */
+
+    /* the child processes all utmp file entries: */
+    while ((utmpp = getutent()) != (struct utmp *) NULL)
+        check_idle();
+    exit(0);                    /* done, so bye */
+    }
+
