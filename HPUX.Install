@@ -1,0 +1,111 @@
+Package name:     autolog
+Version number:   0.35
+Original author:  Sven Liessem <kyle@actarg.com>
+Original URL:     http://www.us.debian.org/Packages/unstable/admin/
+HP-UX URL:        http://hpux.connect.org.uk/hppd/cgi-bin/search?package=&term=autolog-
+Install tree:     /opt/autolog
+Report bugs to:   stephie@connect.org.uk
+Tested on:        HP 9000/780/C160 running HP-UX 11.00
+C compiler used:  Version A.11.01.02
+Purpose:
+A small utmp logging utility for Unix. Autolog aims at disconnecting idle users
+based on the entries in the utmp file. It's behaviour is highly customizable
+through a config file that supports the use of regexps to specify user names
+and groups to act on. You should test it WITH CARE.
+Date archived:    Tue  7 Mar 2000
+
+-------------------------------------------------------------------------------
+
+System:
+======
+	HP-UX shin B.11.00 A 9000/780
+
+URL:
+====
+	http://www.go.dlr.de/linux/src/.warix/
+	
+
+HP Porting Changes:
+===================
+
+  Configuration Files:
+      Makefile -> added HP paths.
+
+      autolog.c ->
+
+      line 58:  We have some HP specific install paths ...
+
+	|
+	|#ifdef __hpux
+	|char *confname = "/opt/autolog/etc/autolog.conf";
+	|char *logfname = "/opt/autolog/var/log/autolog.log";
+	|#else
+	|char *confname = "/etc/autolog.conf";
+	|char *logfname = "/var/log/autolog.log";
+	|#endif
+	|
+
+
+      line 227: size of struct rpb is not known so we dont 
+      use the REGEX fix:
+
+	|
+	|#ifndef __hpux
+	|#define AVOID_REGEX_BUG
+	|#endif
+	|
+
+      We can define UT_NAMESIZE:
+
+	|
+	|#ifdef __hpux
+	|#define UT_NAMESIZE 8  /* utmp.h: char ut_user[8] ; */
+	|#endif
+	|
+
+      If this fails on your machine see the authors comments below:
+
+      "UT_NAMESIZE is only defined in utmp.h for Linux systems, that's 
+      why I had to add the definition. For HPUX 10.20, 11 and Solaris
+      2.5.1, 2.6 the size of ut_user is "hardcoded" to 8.
+
+      As this represents the user's login name it should anyway never 
+      be less than 8 characters long. Maybe the best thing to do is ...
+
+	|
+	|#ifndef UT_NAMESIZE
+	|#define UT_NAMESIZE 8
+	|#endif
+	|
+
+      This way we keep it working on HP and Sun."
+
+
+
+Building:
+=========
+
+
+  Run "make" in the top level dir.
+
+  Use Gmake.  Gmake is now officially "cool" on HP!
+
+  Use "make -n install" to check the defaults, then "make install"
+
+
+  Now try "% autolog -a -d"
+
+  Test it.
+
+
+Installed:
+==========
+ By
+ --     [stephie@connect.org.uk]
+ On
+ --	[ Fri Mar  3 13:01:12 GMT 2000 ]
+ 
+
+
+       HPUX Porting and Archive Centre, Connect, Liverpool University.
+  __/__/__/__/__/__/__/__/__/__/__/__/__/__/__/__/__/__/__/__/__/__/__/__/
