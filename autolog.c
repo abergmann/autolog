@@ -347,7 +347,7 @@ int check_idle()            /* select utmp entries needing killing */
     if (passwd_entry)
         {
         strcpy(name,passwd_entry->pw_name);
-        if(group_entry = getgrgid( passwd_entry->pw_gid ))
+        if( (group_entry = getgrgid(passwd_entry->pw_gid)) )
             gn = group_entry->gr_name;
         else if (debug)
             printf("Can't find group entry for user: %s\n",name);
