@@ -4,9 +4,10 @@
 # stripped back out in the install command anyway.
 CC	= gcc
 CFLAGS	= -g -Wall -D_GNU_SOURCE
-MANDIR  = /opt/autolog/man
-BINDIR  = /opt/autolog/sbin
-ETCDIR  = /opt/autolog/etc
+PREFIX  = /usr
+MANDIR  = $(PREFIX)/share/man
+BINDIR  = $(PREFIX)/sbin
+ETCDIR  = /etc
 # *********************************************************
 
 autolog:	autolog.c
@@ -19,10 +20,10 @@ isdir:
 	test -d $(MANDIR)/man8 || mkdir -p  $(MANDIR)/man8
 
 install:	autolog isdir
-	bsdinst -c -s autolog $(BINDIR)
-	bsdinst -c -m 644 autolog.conf $(ETCDIR)
-	bsdinst -c -m 644 autolog.conf.5 $(MANDIR)/man5
-	bsdinst -c -m 644 autolog.8 $(MANDIR)/man8
+	install -c -s autolog $(BINDIR)
+	install -c -m 644 autolog.conf $(ETCDIR)
+	install -c -m 644 autolog.conf.5 $(MANDIR)/man5
+	install -c -m 644 autolog.8 $(MANDIR)/man8
 
 
 clean:
