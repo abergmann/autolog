@@ -56,5 +56,28 @@ Do timeouts based on total session time--not idle time. (hard)
 .B -L  yes/no
 If set to "yes" activities will be written to the logfile if 
 present.
+.SH NOTES
+There is no autolog daemon. To activate the functionality, autolog 
+has to be called periodically. This is usually done by cron.
+.SH EXAMPLE
+Run autolog dryrun to check configured kill candidates.
+.IP
+\f(CW$ autolog -d -n\fR
+.PP
+Example crontab line for autolog execution.
+.IP
+\f(CW0,10,20,30,40,50 * * * * /usr/sbin/autolog\fR
+.SH FILES
+.PD 0
+.TP 20
+.I /etc/autolog.conf
+Configuration file for the autolog command.
+.PD
+.SH SEE ALSO
+.BR autolog.conf (5)
 .SH AUTHOR
+.PD 0
 Kyle Bateman <kyle@actarg.com>
+.PP
+Alexander Bergmann <abergmann@suse.com>
+.PD
