@@ -4,10 +4,10 @@
 # stripped back out in the install command anyway.
 CC	= gcc
 CFLAGS	= -g -Wall -D_GNU_SOURCE
-PREFIX  = /usr
+PREFIX  = $(DESTDIR)/usr
 MANDIR  = $(PREFIX)/share/man
 BINDIR  = $(PREFIX)/sbin
-ETCDIR  = /etc
+ETCDIR  = $(DESTDIR)/etc
 # *********************************************************
 
 autolog:	autolog.c
