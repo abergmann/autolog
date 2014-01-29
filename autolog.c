@@ -182,7 +182,7 @@ int pat_match(char *patt, char *strg) {
 	rpb.translate = 0;
 	if (!re_compile_pattern(patt,strlen(patt),&rpb)) {
 		if (re_match(&rpb,strg,strlen(strg),0,0) == strlen(strg))
-		retval = 1;
+			retval = 1;
 	}
 	free(rpb.buffer);
 	return(retval);
@@ -219,36 +219,39 @@ int mesg(int flag, char *name, char *dev, int stime, int idle, conf_el *ce) {
 			bailout("Can't open user's terminal", 5);
 		if (ce->hard) {
 			fprintf(fp,"%s: You've been on for %d min.\07\n", name, stime);
-			fprintf(fp,"You'll be logged off in %d sec. so finish up:",ce->grace);
+			fprintf(fp,"You'll be logged off in %d sec. so finish up:", ce->grace);
 		}
 		else {
 			fprintf(fp,"%s: You've been idle for %d min.\07\n", name, idle);
-			fprintf(fp,"You'll be logged off in %d sec unless you hit a key",ce->grace);
+			fprintf(fp,"You'll be logged off in %d sec unless you hit a key", ce->grace);
 		}
 		fclose(fp);
 		if (log && ce->log)
-			fprintf(log, "** NOTIFIED ** %s %s idle:%d sess:%d %s",name, dev+5, idle, stime, ctime(&tvec)+3);
+			fprintf(log, "** NOTIFIED ** %s %s idle:%d sess:%d %s", name, dev+5, idle, stime, ctime(&tvec)+3);
 	}
 	if (flag == LOGOFF) { /* process log-off message */
 		if (log && ce->log)
-			fprintf(log, "** LOGOFF ** %s %s idle:%d sess:%d %s",name, dev+5, idle, stime, ctime(&tvec)+3);
+			fprintf(log, "** LOGOFF ** %s %s idle:%d sess:%d %s", name, dev+5, idle, stime, ctime(&tvec)+3);
 		if (ce->mail) {
 			sprintf(mbuf, "/bin/mail %s", name);
 			/* open pipe to mail program for writing */
 			if (!(mprog = popen(mbuf, "w")) )
 				bailout("Can't use /bin/mail program", 6);
-			fprintf(mprog, "Subject: Excess Idle Time\nLogged off - excess idle time - %s %s\ntty = %s\n",name, ctime(&tvec), dev+5);
+			fprintf(mprog, "Subject: Excess Idle Time\nLogged off - excess idle time - %s %s\ntty = %s\n",
+					name, ctime(&tvec), dev+5);
 			fclose(mprog);
 		}
         }
 	if (flag == NOLOGOFF) { /* send mail to root if can't kill */
 		if (log && ce->log)
-			fprintf(log, "** LOGOFF-FAIL ** %s (pid = %d) %s (%d min idle time) %s",name, utmpp->ut_pid, dev+5, idle, ctime(&tvec)+3);
+			fprintf(log, "** LOGOFF-FAIL ** %s (pid = %d) %s (%d min idle time) %s",
+					name, utmpp->ut_pid, dev+5, idle, ctime(&tvec)+3);
 		if (ce->mail) {
 			sprintf(mbuf, "/bin/mail root");
 			if ((mprog = popen(mbuf, "w")) == (FILE *) NULL)
 				bailout("Can't use /bin/mail program", 7);
-			fprintf(mprog, "Subject: Can't logoff %s\nCan't Log off - %s %s\ntty = %s\n", name, name, ctime(&tvec), dev+5);
+			fprintf(mprog, "Subject: Can't logoff %s\nCan't Log off - %s %s\ntty = %s\n", 
+					name, name, ctime(&tvec), dev+5);
 			fclose(mprog);
 		}
 	}
@@ -257,16 +260,16 @@ int mesg(int flag, char *name, char *dev, int stime, int idle, conf_el *ce) {
 	return(0);
 }
 
-int killit(int pid) {    /* terminate process using SIGHUP, then SIGKILL */
-	kill(pid, SIGHUP);          /* first send "hangup" signal */
+int killit(int pid) {    		/* terminate process using SIGHUP, then SIGKILL */
+	kill(pid, SIGHUP); 		/* first send "hangup" signal */
 	sleep(KWAIT);
-	if (!kill(pid, 0)) { /* SIGHUP might be ignored */
+	if (!kill(pid, 0)) { 		/* SIGHUP might be ignored */
 		kill(pid, SIGKILL);     /* then send sure "kill" signal */
 		sleep(KWAIT);
 		if (!kill(pid, 0))
-			return(0);          /* failure--refuses to die! */
+			return(0);      /* failure--refuses to die! */
 		else
-			return(1);          /* successful kill with SIGKILL */
+			return(1);      /* successful kill with SIGKILL */
 	}
 	else
 		return(1);              /* successful kill with SIGHUP */
@@ -282,20 +285,22 @@ int check_idle() {   /* select utmp entries needing killing */
 	int i;
 
 #ifdef __hpux
-#	define UT_NAMESIZE 8  /* utmp.h: char ut_user[8] ; */
+#	define UT_NAMESIZE 8  			/* utmp.h: char ut_user[8] ; */
 #endif
 
 
-	if (utmpp->ut_type != USER_PROCESS) {  /* if not a user process */
+	if (utmpp->ut_type != USER_PROCESS) { 	/* if not a user process */
         
 		if (listall)
-			printf("Non-user process: N:%-8s P:%5d Login:%s",utmpp->ut_user,utmpp->ut_pid,ctime((const time_t *)&utmpp->ut_time));
+			printf("Non-user process: N:%-8s P:%5d Login:%s",
+				utmpp->ut_user, utmpp->ut_pid, ctime((const time_t *)&utmpp->ut_time));
 		return(0);                          /* skip the utmp entry */
         }
 	sprintf(prname,"/proc/%d",utmpp->ut_pid);   /* make filename to check in /proc */
 	if (stat(prname, &status)) {                 /* is this a current process */
 		if (listall)
-			printf("Dead process: N:%-8s P:%5d Login:%s",utmpp->ut_user,utmpp->ut_pid,ctime((const time_t *)&utmpp->ut_time));
+			printf("Dead process: N:%-8s P:%5d Login:%s",
+				utmpp->ut_user, utmpp->ut_pid, ctime((const time_t *)&utmpp->ut_time));
 		return(0);
 	}
         
@@ -312,7 +317,8 @@ int check_idle() {   /* select utmp entries needing killing */
 	name[UT_NAMESIZE] = '\0';           /* null terminate user name string */
 
 	if (debug)
-		printf("\nChecking: %-11s on %-12s I:%-4zu T:%d Login: %s",name,dev,idle,utmpp->ut_type,ctime((const time_t *)&utmpp->ut_time));
+		printf("\nChecking: %-11s on %-12s I:%-4zu T:%d Login: %s",
+			name, dev, idle, utmpp->ut_type, ctime((const time_t *)&utmpp->ut_time));
 
 	/* now try to find the group of this person */
 	/* if usernames in utmp are limited to 8 chars, we will may fail on */
@@ -335,7 +341,7 @@ int check_idle() {   /* select utmp entries needing killing */
 		    pat_match(c_arr[i].line,utmpp->ut_line)) {
 			if (debug)
 				printf("Match #%2d: U:%-12s Grp:%-8s Line:%-9s Pid:%-6d Sess:%3zu:%02zu\n",
-					i+1,name,gn,utmpp->ut_line,utmpp->ut_pid,stime/60,stime%60);
+					i+1, name, gn, utmpp->ut_line, utmpp->ut_pid, stime/60, stime%60);
 			if (!c_arr[i].idle) {   /* if user exempt (idle=0) */
 				if (debug)
 					printf("User exempt\n");
@@ -352,13 +358,13 @@ int check_idle() {   /* select utmp entries needing killing */
         
 		if (!c_arr[i].hard) {           /* if considering idle time */
 			if (debug)
-				printf("Subject to logout   Idle time: %4zu (%2d allowed)\n",idle,ce->idle);
+				printf("Subject to logout   Idle time: %4zu (%2d allowed)\n", idle, ce->idle);
 			if (idle < ce->idle)    /* if user was recently active */
 				return(0);                  /* let it live */
 		}
 		else {
 			if (debug)
-				printf("Subject to logout   Total time: %4zu (%2d allowed)\n",stime,ce->idle);
+				printf("Subject to logout   Total time: %4zu (%2d allowed)\n", stime, ce->idle);
 			if (stime < ce->idle)   /* if user still under limit */
 				return(0);                  /* let it live */
 		}
@@ -368,7 +374,7 @@ int check_idle() {   /* select utmp entries needing killing */
 			return(1);
 		}
 		if (debug)
-			printf("Warning user:%s Line:%s  Sleep %d sec\n",name,utmpp->ut_line,ce->grace);
+			printf("Warning user:%s Line:%s  Sleep %d sec\n", name, utmpp->ut_line, ce->grace);
 		mesg(WARNING, name, dev, stime, idle, ce); /* send warning to user */
 		if (stat(dev, &status))
 			bailout("Can't get status of user's terminal", 2);
@@ -378,7 +384,7 @@ int check_idle() {   /* select utmp entries needing killing */
 			bailout("Can't get status of user's terminal", 3);
 		if (ce->hard || start >= status.st_atime) {  /* user still idle */
 			if (debug)
-				printf("Killing user:%s Line:%s  Sleep %d sec\n",name,utmpp->ut_line,KWAIT);
+				printf("Killing user:%s Line:%s  Sleep %d sec\n", name, utmpp->ut_line, KWAIT);
 		if (killit(utmpp->ut_pid)) {
 			mesg(LOGOFF, name, dev, stime, idle, ce); /* send warning to user */
 			return(1);
